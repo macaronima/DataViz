@@ -1,5 +1,5 @@
 ---
-title: "TEAM 2 - I want to be a Billionaire"
+title: "Final Project - I want to be a Billionaire"
 output:
   html_document:
     df_print: paged
@@ -22,76 +22,6 @@ baires$continent <- countrycode(sourcevar = baires[, "Country"],
                             destination = "continent")
 
 str(baires)
-```
-
-# INTRODUCTION AND QUICK FACTS
-
-## NETWORK RANGE OF BILLIONAIRES - MAX, MIN, MEAN
-
-```{r}
-nw_descriptive_stats <- c(nrow(baires), max(baires$Networth), min(baires$Networth), mean(baires$Networth), median(baires$Networth))
-names(nw_descriptive_stats) <- c("Number of billionaires", "Highest net worth", "Lowest net worth", "Average net worth", "Median net worth")
-nw_descriptive_stats
-```
-
-## RICHEST, YOUNGEST, OLDEST, MALAYSIAN BILLIONAIRES
-
-```{r}
-richest_baires <- baires %>%
-    arrange(desc(Networth)) %>%
-    head(n = 10L)
-
-youngest_baires <- baires %>%
-    arrange(Age) %>%
-    head(n = 10L)
-
-oldest_baires <- baires %>%
-    arrange(desc(Age)) %>%
-    head(n = 10L)
-
-MY_baires <- baires %>%
-    filter(Country == "Malaysia") %>%
-    arrange(desc(Networth))
-  
-
-richest_baires
-youngest_baires
-oldest_baires
-MY_baires
-```
-
-## AGE RANGE OF BILLIONAIRES - OLDEST, YOUNGEST, AVERAGE AGE
-
-```{r}
-age_descriptive_stats <- c(max(baires$Age), min(baires$Age), mean(baires$Age), median(baires$Age))
-names(age_descriptive_stats) <- c("Oldest", "Youngest", "Average age", "Median age")
-age_descriptive_stats
-```
-
-## THE TEN OLDEST AND YOUNGEST BILLIONAIRES IN THE WORLD
-
-```{r}
-oldest_baires <- baires %>%
-    arrange(desc(Age)) %>%
-    head(n = 10L)
-
-youngest_baires <- baires %>%
-    arrange(Age) %>%
-    head(n = 10L)
-
-oldest_baires
-youngest_baires 
-
-```
-
-## SOURCE OF WEALTH
-
-```{r}
-baires %>%
-  group_by(Source) %>%
-  summarize(sum_nw = sum(Networth)) %>%
-  arrange(desc(sum_nw))
-
 ```
 
 # BUBBLE CHART ANALYSIS
@@ -453,4 +383,73 @@ regtab %>%
        ) +
     geom_text(aes(label=round(10^estimate,4), vjust=-.5))
  
+```
+# QUICK FACTS
+
+## NETWORK RANGE OF BILLIONAIRES - MAX, MIN, MEAN
+
+```{r}
+nw_descriptive_stats <- c(nrow(baires), max(baires$Networth), min(baires$Networth), mean(baires$Networth), median(baires$Networth))
+names(nw_descriptive_stats) <- c("Number of billionaires", "Highest net worth", "Lowest net worth", "Average net worth", "Median net worth")
+nw_descriptive_stats
+```
+
+## RICHEST, YOUNGEST, OLDEST, MALAYSIAN BILLIONAIRES
+
+```{r}
+richest_baires <- baires %>%
+    arrange(desc(Networth)) %>%
+    head(n = 10L)
+
+youngest_baires <- baires %>%
+    arrange(Age) %>%
+    head(n = 10L)
+
+oldest_baires <- baires %>%
+    arrange(desc(Age)) %>%
+    head(n = 10L)
+
+MY_baires <- baires %>%
+    filter(Country == "Malaysia") %>%
+    arrange(desc(Networth))
+  
+
+richest_baires
+youngest_baires
+oldest_baires
+MY_baires
+```
+
+## AGE RANGE OF BILLIONAIRES - OLDEST, YOUNGEST, AVERAGE AGE
+
+```{r}
+age_descriptive_stats <- c(max(baires$Age), min(baires$Age), mean(baires$Age), median(baires$Age))
+names(age_descriptive_stats) <- c("Oldest", "Youngest", "Average age", "Median age")
+age_descriptive_stats
+```
+
+## THE TEN OLDEST AND YOUNGEST BILLIONAIRES IN THE WORLD
+
+```{r}
+oldest_baires <- baires %>%
+    arrange(desc(Age)) %>%
+    head(n = 10L)
+
+youngest_baires <- baires %>%
+    arrange(Age) %>%
+    head(n = 10L)
+
+oldest_baires
+youngest_baires 
+
+```
+
+## SOURCE OF WEALTH
+
+```{r}
+baires %>%
+  group_by(Source) %>%
+  summarize(sum_nw = sum(Networth)) %>%
+  arrange(desc(sum_nw))
+
 ```
