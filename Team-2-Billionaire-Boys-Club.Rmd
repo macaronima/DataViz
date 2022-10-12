@@ -1,0 +1,456 @@
+---
+title: "TEAM 2 - I want to be a Billionaire"
+output:
+  html_document:
+    df_print: paged
+---
+
+# DATA LOADING, DATA STRUCTURE
+
+```{r message=FALSE}
+'install.packages("tidyverse")
+install.packages("countrycode")
+install.packages("moderndive")'
+library(dplyr)
+library(ggplot2)
+library(countrycode)
+library(moderndive)
+
+baires <- read.csv("Forbes Billionaires.csv")
+baires$continent <- countrycode(sourcevar = baires[, "Country"],
+                            origin = "country.name",
+                            destination = "continent")
+
+str(baires)
+```
+
+# INTRODUCTION AND QUICK FACTS
+
+## NETWORK RANGE OF BILLIONAIRES - MAX, MIN, MEAN
+
+```{r}
+nw_descriptive_stats <- c(nrow(baires), max(baires$Networth), min(baires$Networth), mean(baires$Networth), median(baires$Networth))
+names(nw_descriptive_stats) <- c("Number of billionaires", "Highest net worth", "Lowest net worth", "Average net worth", "Median net worth")
+nw_descriptive_stats
+```
+
+## RICHEST, YOUNGEST, OLDEST, MALAYSIAN BILLIONAIRES
+
+```{r}
+richest_baires <- baires %>%
+    arrange(desc(Networth)) %>%
+    head(n = 10L)
+
+youngest_baires <- baires %>%
+    arrange(Age) %>%
+    head(n = 10L)
+
+oldest_baires <- baires %>%
+    arrange(desc(Age)) %>%
+    head(n = 10L)
+
+MY_baires <- baires %>%
+    filter(Country == "Malaysia") %>%
+    arrange(desc(Networth))
+  
+
+richest_baires
+youngest_baires
+oldest_baires
+MY_baires
+```
+
+## AGE RANGE OF BILLIONAIRES - OLDEST, YOUNGEST, AVERAGE AGE
+
+```{r}
+age_descriptive_stats <- c(max(baires$Age), min(baires$Age), mean(baires$Age), median(baires$Age))
+names(age_descriptive_stats) <- c("Oldest", "Youngest", "Average age", "Median age")
+age_descriptive_stats
+```
+
+## THE TEN OLDEST AND YOUNGEST BILLIONAIRES IN THE WORLD
+
+```{r}
+oldest_baires <- baires %>%
+    arrange(desc(Age)) %>%
+    head(n = 10L)
+
+youngest_baires <- baires %>%
+    arrange(Age) %>%
+    head(n = 10L)
+
+oldest_baires
+youngest_baires 
+
+```
+
+## SOURCE OF WEALTH
+
+```{r}
+baires %>%
+  group_by(Source) %>%
+  summarize(sum_nw = sum(Networth)) %>%
+  arrange(desc(sum_nw))
+
+```
+
+# BUBBLE CHART ANALYSIS
+
+## Net Worth X Number X Industry
+
+```{r}
+by_indstry <- baires %>%
+  group_by(Industry) %>%
+  summarize(sum_nw = sum(Networth), avg_nw = mean(Networth), n = n()) %>%
+  arrange(sum_nw)
+
+ggplot(by_indstry, aes(sum_nw, n, size = avg_nw, color = Industry)) +
+  geom_jitter() +
+  labs(title = "Billionaires by industry, net worth, and count",
+       x = "Number of billionaires",
+       y = "Total net worth (log scale)"
+  ) +
+  scale_y_log10() +
+  geom_text(aes(label=Industry, size = 4), vjust=-1)
+```
+
+## Net Worth X Number X Country X Continent
+
+```{r}
+by_cntry <- baires %>%
+  group_by(Country) %>%
+  summarize(sum_nw = sum(Networth), avg_nw = mean(Networth), n = n(), continent = unique(continent)) %>%
+  arrange(sum_nw)
+
+ggplot(by_cntry, aes(sum_nw, avg_nw, size = n, color = continent)) +
+  geom_point() +
+  labs(title = "Average vs Total net worth by country and number of billionaires",
+       x = "Total net worth (log scale)",
+       y = "Average net worth"
+       ) +
+  scale_x_log10() +
+  geom_text(aes(label=Country, size = 100, vjust=-1.25))
+```
+
+## Rank X Age X Net Worth X Industry
+
+```{r}
+baires %>%
+  filter(Rank <= 200) %>%
+    ggplot(aes(Rank, Age, size = Networth, color = continent )) +
+    geom_jitter() +
+    labs(title = "Top 200 billionaires by rank, age, net worth, and continent",
+       x = "Rank",
+       )
+ 
+```
+
+## Rank X Age X Net Worth X Industry X Continent
+
+```{r}
+baires %>%
+  filter(Rank <= 200) %>%
+    ggplot(aes(Rank, Age, size = Networth, color = Industry )) +
+    geom_jitter() +
+    facet_wrap(~continent) +
+    labs(title = "Top 200 billionaires by rank, age, net worth, and industry",
+       x = "Rank",
+       )
+ 
+```
+
+# COUNTRY ANALYSIS
+
+## Column: Number of billionaires by country
+
+```{r}
+num_by_cntry <- baires %>%
+  group_by(Country) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+
+total_baires <- nrow(baires)
+
+per_by_cntry <- num_by_cntry %>%
+  mutate(percentage = num_by_cntry$n/total_baires*100)
+
+top10_per_by_cntry <- head(per_by_cntry, n = 10)
+
+ggplot(top10_per_by_cntry, aes(reorder(Country, -n), n, fill = Country)) +
+  geom_col() +
+  theme(legend.position = "none",
+        axis.title.x=element_blank()) +
+  labs(title = "Number of billionaires by country",
+       subtitle = "US and China has the largest number of billionaires globally",
+       y = "Number of billionaires"
+       ) +
+  geom_text(aes(label=round(n,1)), vjust=-0.25)
+
+```
+
+## Net Worth by Country x Industry
+
+```{r}
+top10c <- top10_per_by_cntry$Country
+
+nw_by_cntry_x_indstry <- baires %>%
+  filter(Country == top10c) %>%
+  group_by(Country, Industry) %>%
+  summarize(sum_nw = sum(Networth))
+
+ggplot(nw_by_cntry_x_indstry, aes(Country, sum_nw, fill = Industry)) +
+  geom_col() +
+  theme(axis.title.x=element_blank()) +
+  labs(title = "Net worth by country and industry",
+       y = "$ billion"
+       ) +
+  theme(axis.text.x = element_text(angle = 45, vjust=0.75)) 
+
+```
+
+## Histogram: Number of billionaires by country
+
+```{r}
+
+ggplot(num_by_cntry, aes(n)) +
+  geom_histogram() +
+  theme(legend.position = "none") +
+  labs(title = "Histogram of number of billionaires by country",
+       subtitle = "Most countries in this list only have 1 billionaire",
+       x = "Number of billionaires"
+       ) +
+  scale_x_log10()
+
+```
+
+## Column: Net worth by country
+
+```{r}
+nw_by_cntry <- baires %>%
+  group_by(Country) %>%
+  summarize(sum_nw = sum(Networth)) %>%
+  arrange(desc(sum_nw))
+
+total_nw <- sum(baires$Networth)
+
+pernw_by_cntry <- nw_by_cntry %>%
+  mutate(percentage = nw_by_cntry$sum_nw/total_nw*100)
+
+top10_pernw_by_cntry <- head(pernw_by_cntry, n = 10)
+
+ggplot(top10_pernw_by_cntry, aes(reorder(Country, -sum_nw), sum_nw, fill = Country)) +
+  geom_col() +
+  theme(legend.position = "none",
+        axis.title.x=element_blank()) +
+  labs(title = "Total net worth of billionaires by country",
+       subtitle = "Net worth of US billionaires are substantially larger than the rest",
+       y = "$ billion"
+       ) +
+  geom_text(aes(label=round(sum_nw,1)), vjust=-0.25)
+
+```
+
+## Histogram: Net worth of billionaires by country
+
+```{r}
+
+ggplot(nw_by_cntry, aes(sum_nw)) +
+  geom_histogram() +
+  theme(legend.position = "none") +
+  labs(title = "Histogram of net worth of billionaires by country",
+       x = "$ billion"
+       ) +
+  scale_x_log10()
+
+```
+
+# INDUSTRY ANALYSIS
+
+## Column: Number of billionaires by industry
+
+```{r}
+no_by_indstry <- baires %>%
+  group_by(Industry) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+
+perno_by_indstry <- no_by_indstry %>%
+  mutate(percentage = no_by_indstry$n/total_baires*100)
+
+top10_perno_by_indstry <- head(perno_by_indstry, n = 10)
+
+ggplot(top10_perno_by_indstry, aes(reorder(Industry, -n), n, fill = Industry)) +
+  geom_col() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, vjust=0.75)) +
+  labs(title = "Share of billionaires' net worth by industry",
+       x = "Industry",
+       y = "Number of billionaires"
+       ) +
+  geom_text(aes(label=round(n,1)), vjust=-0.15)
+
+```
+
+## Column: Net worth by industry
+
+```{r}
+nw_by_indstry <- baires %>%
+  group_by(Industry) %>%
+  summarize(sum_nw = sum(Networth)) %>%
+  arrange(desc(sum_nw))
+
+total_nw <- sum(baires$Networth)
+
+pernw_by_indstry <- nw_by_indstry %>%
+  mutate(percentage = nw_by_indstry$sum_nw/total_nw*100)
+
+top10_pernw_by_indstry <- head(pernw_by_indstry, n = 10)
+
+ggplot(top10_pernw_by_indstry, aes(reorder(Industry, -sum_nw), sum_nw, fill = Industry)) +
+  geom_col() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, vjust=0.75),
+        axis.title.x=element_blank()) +
+  labs(title = "Share of billionaires' net worth by industry",
+       y = "$ billion"
+       ) +
+  geom_text(aes(label=round(sum_nw,1)), vjust=-0.5)
+
+```
+
+## Column: Number of billionaires by industry and continent
+
+```{r}
+num_by_indstry_x_continent <- baires %>%
+  group_by(Industry, continent) %>%
+  summarize(n = n())
+
+ggplot(num_by_indstry_x_continent, aes(Industry, n, fill = continent)) +
+  geom_col() +
+  theme(axis.title.x=element_blank()) +
+  labs(title = "Number of billionaires by industry and continent",
+       y = "Count"
+       ) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5)) 
+
+```
+
+## Column: Net worth by industry and continent
+
+```{r}
+nw_by_indstry_x_continent <- baires %>%
+  group_by(Industry, continent) %>%
+  summarize(sum_nw = sum(Networth))
+
+ggplot(nw_by_indstry_x_continent, aes(Industry, sum_nw, fill = continent)) +
+  geom_col() +
+  theme(axis.title.x=element_blank()) +
+  labs(title = "Net worth of billionaires by industry and continent",
+       y = "$ billion"
+       ) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5)) 
+
+```
+
+# AGE ANALYSIS
+
+## Histogram
+
+```{r}
+
+ggplot(baires, aes(Networth)) +
+  geom_histogram() +
+  theme(legend.position = "none") +
+  labs(title = "Histogram of net worth of billionaires by country",
+       subtitle = "Most billionaies have around $1 - $2 billion",
+       x = "Number of billionaires (log scale)",
+       y = "count (log scale)"
+       ) +
+  scale_x_log10() +
+  scale_y_log10()
+
+ggplot(baires, aes(Age)) + 
+  geom_histogram(binwidth = 10) +
+  labs(title = "Histogram of age of billionaires by country",
+       subtitle = "Median age of 64 years old",
+       x = "Age"
+       )
+
+```
+
+## Age by Continent
+
+```{r}
+ggplot(baires, aes(Age, fill = continent)) +
+  geom_histogram(binwidth = 10) +
+  facet_grid(~continent) +
+  theme(legend.position = "none") +
+  scale_y_log10() +
+  labs(title = "Histogram of billionaires' age by continent",
+       x = "Age",
+       y = "Count (log scale)"
+       )
+
+ggplot(baires, aes(continent, Age)) +
+  geom_boxplot() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank()) +
+  scale_y_log10() +
+  labs(title = "Boxplot of billionaires' age by continent",
+       subtitle = "Median age of billionaires in Asia younger than others",
+       y = "Age"
+       )
+
+```
+
+##Age by Industry
+
+```{r}
+
+top10i <- top10_pernw_by_indstry$Industry
+
+baires %>%
+  filter(Industry == top10i) %>%
+  ggplot(aes(Industry, Age)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of billionaire by industry and age",
+       x = "Industry",
+       y = "Age"
+       ) +  
+  theme(axis.text.x = element_text(angle = 10, vjust=0.75),
+        axis.title.x = element_blank()) 
+  
+```
+
+# REGRESSION
+
+## Regression
+
+```{r}
+
+baires$continent <- factor(baires$continent, ordered = FALSE)
+
+baires$continent <- relevel(baires$continent, ref = "Asia")
+
+model <- lm(log10(Networth) ~ Age + continent, data = baires)
+get_regression_table(model)
+ 
+```
+
+## Regression - Coefficients
+
+```{r}
+
+regtab <- get_regression_table(model)
+
+regtab %>%
+  filter(p_value <=0.1) %>%
+  ggplot(aes(term, 10^(estimate), fill = term)) +
+    geom_col() +
+    labs(title = "Coefficients of variables with p_value <= 0.05",
+       x = "Variable",
+       y = "Coefficient ($ billion)"
+       ) +
+    geom_text(aes(label=round(10^estimate,4), vjust=-.5))
+ 
+```
