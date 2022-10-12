@@ -1,8 +1,10 @@
 ---
 title: "Final Project - I want to be a Billionaire"
 output:
+  word_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 # DATA LOADING, DATA STRUCTURE
